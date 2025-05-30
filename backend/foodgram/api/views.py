@@ -1,43 +1,43 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import viewsets, status,mixins
+from rest_framework import viewsets, status, mixins
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.filters import RecipeFilter
 from api.permissions import IsAdminAuthorOrReadOnly
-from api.serializers import (IngredientSerializer, RecipeCreateSerializer,
+from api.serializers import (FavoriteSerializer, IngredientSerializer,
+                             RecipeCreateSerializer,
                              RecipeGetSerializer, TagSerialiser,
                              UserSubscribeRepresentSerializer,
                              UserSubscribeSerializer)
-from recipes.models import Ingredient, Tag, Recipe
+from recipes.models import Ingredient, Tag, Recipe, Favorite
 from users.models import User, Subscription
 
 
 class UserSubscribeView(APIView):
     def post(self, request, user_id):
-        user = get_object_or_404(User, username=request.user)
-        author = get_object_or_404(User, id=user_id)
         serializer = UserSubscribeSerializer(
-            data={'user': user.id, 'author': user_id}
+            data={'user': request.user.id, 'author': user_id},
+            context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        serializer = UserSubscribeRepresentSerializer(
-            author, context={'request': request}
-        )
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, user_id):
-        user = get_object_or_404(User, username=request.user)
         author = get_object_or_404(User, id=user_id)
-        if not Subscription.objects.filter(user=user, author=author).exists():
+        if not Subscription.objects.filter(user=request.user, author=author).exists():
             return Response(
                 {'errors': 'Вы не подписаны на этого пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Subscription.objects.get(user=user.id, author=user_id).delete()
+        Subscription.objects.get(user=request.user.id, author=user_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -67,9 +67,37 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAdminAuthorOrReadOnly, )
+    permission_classes = (IsAdminAuthorOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
             return RecipeGetSerializer
         return RecipeCreateSerializer
+
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated, ]
+    )
+    def favorite(self, request, pk):
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            serializer = FavoriteSerializer(
+                data={'user': request.user.id, 'recipe': recipe.id},
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            if not Favorite.objects.filter(user=request.user, recipe=recipe).exists():
+                return Response(
+                    {'errors': 'У вас нет этого рецепта в избранном'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            Favorite.objects.filter(user=request.user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)

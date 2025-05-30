@@ -4,7 +4,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from django.shortcuts import get_object_or_404
 
 from users.models import User, Subscription
-from api.utils import Base64ImageField
+from api.utils import Base64ImageField, create_ingredients
 from recipes.models import (Favorite, Ingredient,
                             Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
@@ -97,6 +97,12 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
             )
         return data
 
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return UserSubscribeRepresentSerializer(
+            instance.author, context={'request': request}
+        ).data
+
 
 class IngredientGetSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source='ingredient.id', read_only=True)
@@ -140,14 +146,14 @@ class RecipeGetSerializer(serializers.ModelSerializer):
         return (request and request.user.is_authenticated
                 and Favorite.objects.filter(
                     user=request.user, recipe=obj
-                )).exists()
+                ).exists())
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         return (request and request.user.is_authenticated
                 and ShoppingCart.objects.filter(
                     user=request.user, recipe=obj
-                )).exists()
+                ).exists())
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -181,11 +187,43 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(author=request.user, **validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            current_ingredient = get_object_or_404(Ingredient, id=ingredient.get('id'))
-            amount = ingredient.get('amount')
-            RecipeIngredient.objects.create(recipe=recipe, ingredient=current_ingredient, amount=amount)
+        create_ingredients(ingredients, recipe)
+
         return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('recipeingredients')
+        tags = validated_data.pop('tags')
+        instance.tags.clear()
+        instance.tags.set(tags)
+        RecipeIngredient.objects.filter(recipe=instance).delete()
+        instance.image = validated_data.get('image', instance.name)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        create_ingredients(ingredients, instance)
+        instance.save()
+        return instance
 
     def to_representation(self, instance):
         return RecipeGetSerializer(instance, context=self.context).data
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Favorite
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в избранное'
+            )
+        ]
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return RecipeSmallSerializer(
+            instance.recipe,
+            context={'request': request}
+        ).data
