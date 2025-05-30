@@ -14,15 +14,17 @@ from api.serializers import (FavoriteSerializer, IngredientSerializer,
                              RecipeCreateSerializer,
                              RecipeGetSerializer, TagSerialiser,
                              UserSubscribeRepresentSerializer,
-                             UserSubscribeSerializer)
-from recipes.models import Ingredient, Tag, Recipe, Favorite
+                             UserSubscribeSerializer, ShoppingCartSerializer)
+from api.utils import create_model_instance, delete_model_instance
+from recipes.models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
 from users.models import User, Subscription
 
 
 class UserSubscribeView(APIView):
     def post(self, request, user_id):
+        author = get_object_or_404(User, id=user_id)
         serializer = UserSubscribeSerializer(
-            data={'user': request.user.id, 'author': user_id},
+            data={'user': request.user.id, 'author': author.id},
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
@@ -85,19 +87,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk):
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            serializer = FavoriteSerializer(
-                data={'user': request.user.id, 'recipe': recipe.id},
-                context={'request': request}
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return create_model_instance(request, recipe, FavoriteSerializer)
 
         if request.method == 'DELETE':
-            if not Favorite.objects.filter(user=request.user, recipe=recipe).exists():
-                return Response(
-                    {'errors': 'У вас нет этого рецепта в избранном'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            Favorite.objects.filter(user=request.user, recipe=recipe).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            error_message = 'У вас нет этого рецепта в избранном'
+            return delete_model_instance(request, Favorite, recipe, error_message)
+
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated, ]
+    )
+    def shopping_cart(self, request, pk):
+        recipe = get_object_or_404(Recipe, id=pk)
+        if request.method == 'POST':
+            return create_model_instance(request, recipe, ShoppingCartSerializer)
+
+        if request.method == 'DELETE':
+            error_message = 'У вас нет этого рецепта в списке покупок'
+            return delete_model_instance(request, ShoppingCart, recipe, error_message)

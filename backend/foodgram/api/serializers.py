@@ -90,7 +90,6 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # request = self.context.get('request')
         if data['user'] == data['author']:
             raise serializers.ValidationError(
                 'Нельзя подписываться на самого себя!'
@@ -218,6 +217,26 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 queryset=Favorite.objects.all(),
                 fields=('user', 'recipe'),
                 message='Рецепт уже добавлен в избранное'
+            )
+        ]
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        return RecipeSmallSerializer(
+            instance.recipe,
+            context={'request': request}
+        ).data
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingCart
+        fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=ShoppingCart.objects.all(),
+                fields=('user', 'recipe'),
+                message='Рецепт уже добавлен в список покупок'
             )
         ]
 
