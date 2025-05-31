@@ -1,4 +1,5 @@
-from django.shortcuts import get_object_or_404
+from django.db.models import Sum
+from django.shortcuts import get_object_or_404, HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets, status, mixins
@@ -8,19 +9,22 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.filters import RecipeFilter
-from api.permissions import IsAdminAuthorOrReadOnly
-from api.serializers import (FavoriteSerializer, IngredientSerializer,
-                             RecipeCreateSerializer,
-                             RecipeGetSerializer, TagSerialiser,
-                             UserSubscribeRepresentSerializer,
-                             UserSubscribeSerializer, ShoppingCartSerializer)
-from api.utils import create_model_instance, delete_model_instance
-from recipes.models import Ingredient, Tag, Recipe, Favorite, ShoppingCart
+from .filters import RecipeFilter
+from .permissions import IsAdminAuthorOrReadOnly
+from .serializers import (FavoriteSerializer, IngredientSerializer,
+                          RecipeCreateSerializer,
+                          RecipeGetSerializer, TagSerializer,
+                          UserSubscribeRepresentSerializer,
+                          UserSubscribeSerializer, ShoppingCartSerializer)
+from .utils import create_model_instance, delete_model_instance
+from recipes.models import (Favorite, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import User, Subscription
 
 
 class UserSubscribeView(APIView):
+    """Создание/удаление подписки на пользователя."""
+
     def post(self, request, user_id):
         author = get_object_or_404(User, id=user_id)
         serializer = UserSubscribeSerializer(
@@ -45,6 +49,8 @@ class UserSubscribeView(APIView):
 
 class UserSubscriptionsViewSet(mixins.ListModelMixin,
                                viewsets.GenericViewSet):
+    """Получение списка всех подписок на пользователей."""
+
     serializer_class = UserSubscribeRepresentSerializer
 
     def get_queryset(self):
@@ -52,13 +58,17 @@ class UserSubscriptionsViewSet(mixins.ListModelMixin,
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """Получение информации о тегах."""
+
     queryset = Tag.objects.all()
-    serializer_class = TagSerialiser
+    serializer_class = TagSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Получение информации об ингредиентах."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
@@ -68,6 +78,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """Работа с рецептами. Создание/изменение/удаление рецепта.
+    Получение информации о рецептах.
+    Добавление рецептов в избранное и список покупок.
+    Отправка файла со списком рецептов."""
+
     queryset = Recipe.objects.all()
     permission_classes = (IsAdminAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -85,6 +100,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, ]
     )
     def favorite(self, request, pk):
+        """Работа с избранными рецептами.
+        Удаление/добавление в избранное."""
+
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
             return create_model_instance(request, recipe, FavoriteSerializer)
@@ -99,6 +117,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, ]
     )
     def shopping_cart(self, request, pk):
+        """Работа со списком покупок.
+        Удаление/добавление в список покупок."""
+
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
             return create_model_instance(request, recipe, ShoppingCartSerializer)
@@ -106,3 +127,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'DELETE':
             error_message = 'У вас нет этого рецепта в списке покупок'
             return delete_model_instance(request, ShoppingCart, recipe, error_message)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated, ]
+    )
+    def download_shopping_cart(self, request):
+        """Отправка файла со списком покупок."""
+
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__carts__user=request.user
+        ).values(
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).annotate(ingredient_amount=Sum('amount'))
+        shopping_list = ['Список покупок:\n']
+        for ingredient in ingredients:
+            name = ingredient['ingredient__name']
+            unit = ingredient['ingredient__measurement_unit']
+            amount = ingredient['ingredient_amount']
+            shopping_list.append(f'\n{name} - {amount}, {unit}')
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        return response
