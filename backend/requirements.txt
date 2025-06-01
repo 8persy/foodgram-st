@@ -4,7 +4,7 @@ django-filter~=22.1
 # django-import-export
 djangorestframework==3.12.4
 # djangorestframework-simplejwt==5.2.2
-# gunicorn==20.0.4
+gunicorn==20.0.4
 psycopg2-binary==2.8.6
 # PyJWT==2.1.0
 python-dotenv
