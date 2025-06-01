@@ -2,6 +2,7 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from users.models import User, Subscription
 from api.utils import Base64ImageField, create_ingredients
@@ -106,7 +107,8 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        if data['user'] == data['author']:
+        request = self.context.get('request')
+        if request.user == data['author']:
             raise serializers.ValidationError(
                 'Нельзя подписываться на самого себя!'
             )
@@ -206,6 +208,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         request = self.context.get('request')
         ingredients = validated_data.pop('recipeingredients')
@@ -216,16 +219,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('recipeingredients')
         tags = validated_data.pop('tags')
         instance.tags.clear()
         instance.tags.set(tags)
         RecipeIngredient.objects.filter(recipe=instance).delete()
-        instance.image = validated_data.get('image', instance.name)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        super().update(instance, validated_data)
         create_ingredients(ingredients, instance)
         instance.save()
         return instance
