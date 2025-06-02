@@ -3,6 +3,10 @@ services:
 
   db:
     image: postgres:13.0-alpine
+    environment:
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: Vitizer05
+      POSTGRES_DB: foodgram_db
     volumes:
       - db_data:/var/lib/postgresql/data/
     env_file:
@@ -22,11 +26,13 @@ services:
       - ./.env
 
   frontend:
-    image: foodgram_frontend
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
-    - web
+      - web
 
   nginx:
     container_name: foodgram-proxy
