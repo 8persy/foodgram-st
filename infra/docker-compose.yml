@@ -22,8 +22,7 @@ services:
       - ./.env
 
   frontend:
-    container_name: foodgram-front
-    build: ../frontend
+    image: foodgram_frontend
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:

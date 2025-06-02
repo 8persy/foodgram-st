@@ -143,4 +143,6 @@ media/
 
 backend/media
 backend/foodgram/media
-backend/foodgram/static
+.DS_StoreAdd commentMore actions
+backend/.DS_Store
+backend/foodgram/.DS_Store
