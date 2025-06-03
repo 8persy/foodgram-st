@@ -37,7 +37,8 @@ class UserSubscribeView(APIView):
 
     def delete(self, request, user_id):
         author = get_object_or_404(User, id=user_id)
-        if not Subscription.objects.filter(user=request.user, author=author).exists():
+        if not Subscription.objects.filter(user=request.user,
+                                           author=author).exists():
             return Response(
                 {'errors': 'Вы не подписаны на этого пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -108,7 +109,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if request.method == 'DELETE':
             error_message = 'У вас нет этого рецепта в избранном'
-            return delete_model_instance(request, Favorite, recipe, error_message)
+            return delete_model_instance(request,
+                                         Favorite, recipe, error_message)
 
     @action(
         detail=True,
@@ -121,11 +123,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            return create_model_instance(request, recipe, ShoppingCartSerializer)
+            return create_model_instance(request,
+                                         recipe, ShoppingCartSerializer)
 
         if request.method == 'DELETE':
             error_message = 'У вас нет этого рецепта в списке покупок'
-            return delete_model_instance(request, ShoppingCart, recipe, error_message)
+            return delete_model_instance(request,
+                                         ShoppingCart, recipe, error_message)
 
     @action(
         detail=False,
@@ -147,5 +151,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             amount = ingredient['ingredient_amount']
             shopping_list.append(f'\n{name} - {amount}, {unit}')
         response = HttpResponse(shopping_list, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = \
+            'attachment; filename="shopping_cart.txt"'
         return response

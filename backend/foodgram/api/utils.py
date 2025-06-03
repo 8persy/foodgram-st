@@ -24,7 +24,8 @@ def create_ingredients(ingredients, recipe):
 
     ingredient_list = []
     for ingredient in ingredients:
-        current_ingredient = get_object_or_404(Ingredient, id=ingredient.get('id'))
+        current_ingredient = get_object_or_404(Ingredient,
+                                               id=ingredient.get('id'))
         amount = ingredient.get('amount')
         ingredient_list.append(
             RecipeIngredient(
@@ -53,7 +54,8 @@ def delete_model_instance(request, model_name, instance, error_message):
     """Вспомогательная функция для удаления рецепта
     из избранного либо из списка покупок."""
 
-    if not model_name.objects.filter(user=request.user, recipe=instance).exists():
+    if not model_name.objects.filter(user=request.user,
+                                     recipe=instance).exists():
         return Response(
             {'errors': error_message},
             status=status.HTTP_400_BAD_REQUEST

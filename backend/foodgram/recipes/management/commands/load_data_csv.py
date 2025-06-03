@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 import json
 from recipes.models import Ingredient
 
+
 class Command(BaseCommand):
     help = 'Import ingredients from JSON file'
 
@@ -17,4 +18,4 @@ class Command(BaseCommand):
                 if created:
                     count += 1
             self.stdout.write(
-                self.style.SUCCESS(f'Imported {count} ingredients')
+                self.style.SUCCESS(f'Imported {count} ingredients'))
