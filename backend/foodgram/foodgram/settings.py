@@ -167,3 +167,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost",
     "http://frontend",
 ]
+
+FIXTURE_DIRS = [
+    os.path.join(BASE_DIR, 'data'),
+]

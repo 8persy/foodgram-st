@@ -39,6 +39,8 @@ class User(AbstractUser):
         null=False,
     )
 
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+
     class Meta:
         ordering = ['id']
         verbose_name = 'Пользователь'
