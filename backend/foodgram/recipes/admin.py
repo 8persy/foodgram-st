@@ -2,15 +2,7 @@ from django.contrib import admin
 from django.conf import settings
 
 from .models import (Favorite, Ingredient, Recipe,
-                     RecipeIngredient, ShoppingCart, Tag)
-
-
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'color', 'slug')
-    search_fields = ('name', 'color', 'slug')
-    list_filter = ('name', 'color', 'slug')
-    empty_value_display = settings.EMPTY_VALUE
+                     RecipeIngredient, ShoppingCart)
 
 
 @admin.register(Ingredient)
@@ -29,7 +21,7 @@ class RecipeIngredientInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'author', 'favorites_amount')
     search_fields = ('name', 'author')
-    list_filter = ('name', 'author', 'tags')
+    list_filter = ('name', 'author')
     empty_value_display = settings.EMPTY_VALUE
     inlines = [
         RecipeIngredientInline,

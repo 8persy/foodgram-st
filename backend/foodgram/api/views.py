@@ -12,12 +12,12 @@ from .filters import RecipeFilter, IngredientFilter
 from .permissions import IsAdminAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeCreateSerializer,
-                          RecipeGetSerializer, TagSerializer,
+                          RecipeGetSerializer,
                           UserSubscribeRepresentSerializer,
                           UserSubscribeSerializer, ShoppingCartSerializer)
 from .utils import create_model_instance, delete_model_instance
 from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
+                            RecipeIngredient, ShoppingCart)
 from users.models import User, Subscription
 
 
@@ -55,15 +55,6 @@ class UserSubscriptionsViewSet(mixins.ListModelMixin,
 
     def get_queryset(self):
         return User.objects.filter(following__user=self.request.user)
-
-
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """Получение информации о тегах."""
-
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-    permission_classes = (AllowAny,)
-    pagination_class = None
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

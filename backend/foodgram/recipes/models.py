@@ -4,31 +4,6 @@ from django.db import models
 from users.models import User
 
 
-class Tag(models.Model):
-    name = models.CharField(
-        'Название',
-        max_length=200,
-        unique=True
-    )
-    color = models.CharField(
-        'Цвет',
-        max_length=7,
-        unique=True
-    )
-    slug = models.SlugField(
-        'Слаг',
-        max_length=200,
-        unique=True
-    )
-
-    class Meta:
-        verbose_name = 'Тег'
-        verbose_name_plural = 'Теги'
-
-    def __str__(self):
-        return self.name
-
-
 class Ingredient(models.Model):
     name = models.CharField(
         'Название',
@@ -70,10 +45,6 @@ class Recipe(models.Model):
         Ingredient,
         through='RecipeIngredient',
         verbose_name='Ингредиенты',
-    )
-    tags = models.ManyToManyField(
-        Tag,
-        verbose_name='Теги',
     )
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления',
