@@ -2,7 +2,9 @@ from django.db.models import Sum
 from django.shortcuts import get_object_or_404, HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import viewsets, status, mixins
+from djoser.views import UserViewSet
+
+from rest_framework import viewsets, status, mixins, permissions
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -14,11 +16,52 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeCreateSerializer,
                           RecipeGetSerializer,
                           UserSubscribeRepresentSerializer,
+                          AvatarSerializer,
                           UserSubscribeSerializer, ShoppingCartSerializer)
 from .utils import create_model_instance, delete_model_instance
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart)
 from users.models import User, Subscription
+
+
+class PublicUserViewSet(UserViewSet):
+    def get_queryset(self):
+        users = User.objects.all()
+        return users
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    @action(
+        detail=False,
+        methods=["put", "delete"],
+        url_path="me/avatar",
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def set_avatar(self, request):
+        if request.method == "PUT":
+            if 'avatar' not in request.data:
+                return Response({"error": "No avatar provided."}, status=status.HTTP_400_BAD_REQUEST)
+            serializer = AvatarSerializer(
+                self.request.user,
+                data=request.data,
+                partial=True,
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response(
+                {"avatar": serializer.data["avatar"]},
+                status=status.HTTP_200_OK
+            )
+
+        else:
+            if request.user.avatar:
+                request.user.avatar.delete()
+                request.user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserSubscribeView(APIView):

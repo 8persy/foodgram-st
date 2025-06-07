@@ -19,15 +19,24 @@ class UserSignUpSerializer(UserCreateSerializer):
                   'last_name', 'password')
 
 
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['avatar']
+
+
 class UserGetSerializer(UserSerializer):
     """Сериализатор для работы с информацией о пользователях."""
 
     is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField(required=False)
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed')
+                  'last_name', 'is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')

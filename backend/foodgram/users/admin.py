@@ -5,7 +5,8 @@ from django.conf import settings
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'email', 'username', 'first_name', 'last_name')
+    list_display = ('pk', 'email', 'username',
+                    'first_name', 'last_name', 'avatar')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     list_filter = ('username', 'email')
     empty_value_display = settings.EMPTY_VALUE
