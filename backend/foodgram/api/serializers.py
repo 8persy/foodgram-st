@@ -73,7 +73,8 @@ class UserSubscribeRepresentSerializer(UserGetSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+                  'last_name', 'is_subscribed', 'recipes',
+                  'recipes_count', 'avatar')
         read_only_fields = ('email', 'username', 'first_name', 'last_name',
                             'is_subscribed', 'recipes', 'recipes_count')
 

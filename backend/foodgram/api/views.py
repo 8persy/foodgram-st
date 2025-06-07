@@ -43,7 +43,8 @@ class PublicUserViewSet(UserViewSet):
     def set_avatar(self, request):
         if request.method == "PUT":
             if 'avatar' not in request.data:
-                return Response({"error": "No avatar provided."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "No avatar provided."},
+                                status=status.HTTP_400_BAD_REQUEST)
             serializer = AvatarSerializer(
                 self.request.user,
                 data=request.data,
