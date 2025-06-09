@@ -11,11 +11,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .filters import RecipeFilter, IngredientFilter
-from .permissions import IsAdminAuthorOrReadOnly
+from .permissions import IsAdminOrAuthorOrReadOnly
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeCreateSerializer,
                           RecipeGetSerializer,
-                          UserSubscribeRepresentSerializer,
+                          UserSubscriptionSerializer,
                           AvatarSerializer,
                           UserSubscribeSerializer, ShoppingCartSerializer)
 from .utils import create_model_instance, delete_model_instance
@@ -95,7 +95,7 @@ class UserSubscriptionsViewSet(mixins.ListModelMixin,
                                viewsets.GenericViewSet):
     """Получение списка всех подписок на пользователей."""
 
-    serializer_class = UserSubscribeRepresentSerializer
+    serializer_class = UserSubscriptionSerializer
 
     def get_queryset(self):
         return User.objects.filter(following__user=self.request.user)
@@ -119,7 +119,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     Отправка файла со списком рецептов."""
 
     queryset = Recipe.objects.all()
-    permission_classes = (IsAdminAuthorOrReadOnly,)
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
