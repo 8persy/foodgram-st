@@ -4,7 +4,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from django.db import transaction
 
 from users.models import User, Subscription
-from api.utils import Base64ImageField, create_ingredients
+from .utils import Base64ImageField, create_ingredients
 from recipes.models import (Favorite, Ingredient,
                             Recipe, RecipeIngredient,
                             ShoppingCart)
@@ -62,7 +62,7 @@ class RecipeSmallSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-class UserSubscribeRepresentSerializer(UserGetSerializer):
+class UserSubscriptionSerializer(UserGetSerializer):
     """Сериализатор для предоставления информации
     о подписках пользователя."""
 
@@ -117,7 +117,7 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         request = self.context.get('request')
-        return UserSubscribeRepresentSerializer(
+        return UserSubscriptionSerializer(
             instance.author, context={'request': request}
         ).data
 
