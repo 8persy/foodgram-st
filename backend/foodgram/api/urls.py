@@ -6,18 +6,18 @@ from .views import (IngredientViewSet, RecipeViewSet,
                     UserSubscriptionsViewSet,
                     PublicUserViewSet)
 
-v1_router = DefaultRouter()
+router = DefaultRouter()
 
-v1_router.register('ingredients',
-                   IngredientViewSet, basename='ingredients')
-v1_router.register('recipes', RecipeViewSet, basename='recipes')
-v1_router.register('users', PublicUserViewSet, basename='user')
+router.register('ingredients',
+                IngredientViewSet, basename='ingredients')
+router.register('recipes', RecipeViewSet, basename='recipes')
+router.register('users', PublicUserViewSet, basename='user')
 
 urlpatterns = [
     path('users/subscriptions/',
          UserSubscriptionsViewSet.as_view({'get': 'list'})),
     path('users/<int:user_id>/subscribe/', UserSubscribeView.as_view()),
-    path('', include(v1_router.urls)),
+    path('', include(router.urls)),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]
