@@ -209,7 +209,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(author__id=author_id)
 
         if ingredient_ids:
-            ingredient_ids = [int(id_.strip()) for id_ in ingredient_ids.split(',')]
+            ingredient_ids = [
+                int(id_.strip()) for id_ in ingredient_ids.split(',')
+            ]
             queryset = queryset.filter(
                 recipeingredients__ingredient__id__in=ingredient_ids
             ).distinct()
@@ -231,4 +233,5 @@ class UserRecipesView(ListAPIView):
 
     def get_queryset(self):
         user_id = self.kwargs['id']
-        return Recipe.objects.filter(author__id=user_id).select_related('author')
+        return (Recipe.objects.filter(author__id=user_id)
+                .select_related('author'))
