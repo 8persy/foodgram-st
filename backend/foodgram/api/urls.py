@@ -4,7 +4,9 @@ from rest_framework.routers import DefaultRouter
 from .views import (IngredientViewSet, RecipeViewSet,
                     UserSubscribeView,
                     UserSubscriptionsViewSet,
-                    PublicUserViewSet)
+                    PublicUserViewSet,
+                    UserInfoView,
+                    UserRecipesView)
 
 router = DefaultRouter()
 
@@ -20,4 +22,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path('users/<int:id>/info/', UserInfoView.as_view(), name='user-info'),
+    path('users/<int:id>/recipes/', UserRecipesView.as_view(), name='user-recipes'),
 ]

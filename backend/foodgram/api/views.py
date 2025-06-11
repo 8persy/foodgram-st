@@ -6,6 +6,7 @@ from djoser.views import UserViewSet
 
 from rest_framework import viewsets, status, mixins, permissions
 from rest_framework.decorators import action
+from rest_framework.generics import RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +18,10 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeGetSerializer,
                           UserSubscriptionSerializer,
                           AvatarSerializer,
-                          UserSubscribeSerializer, ShoppingCartSerializer)
+                          UserSubscribeSerializer,
+                          ShoppingCartSerializer,
+                          UserGetSerializer
+                          )
 from .utils import create_model_instance, delete_model_instance
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart)
@@ -189,3 +193,42 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = \
             'attachment; filename="shopping_cart.txt"'
         return response
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='filter'
+    )
+    def filter_recipes(self, request):
+        author_id = request.query_params.get('author')
+        ingredient_ids = request.query_params.get('ingredients')
+
+        queryset = self.queryset
+
+        if author_id:
+            queryset = queryset.filter(author__id=author_id)
+
+        if ingredient_ids:
+            ingredient_ids = [int(id_.strip()) for id_ in ingredient_ids.split(',')]
+            queryset = queryset.filter(
+                recipeingredients__ingredient__id__in=ingredient_ids
+            ).distinct()
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class UserInfoView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserGetSerializer
+    lookup_field = 'id'
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+
+
+class UserRecipesView(ListAPIView):
+    serializer_class = RecipeGetSerializer
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+
+    def get_queryset(self):
+        user_id = self.kwargs['id']
+        return Recipe.objects.filter(author__id=user_id).select_related('author')
