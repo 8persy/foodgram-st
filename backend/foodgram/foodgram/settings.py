@@ -133,7 +133,7 @@ DJOSER = {
     }
 }
 
-EMPTY_VALUE = '-пусто-'
+EMPTY_VALUE = '-'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost",

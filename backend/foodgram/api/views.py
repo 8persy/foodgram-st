@@ -6,6 +6,7 @@ from djoser.views import UserViewSet
 
 from rest_framework import viewsets, status, mixins, permissions
 from rest_framework.decorators import action
+from rest_framework.generics import RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,22 +18,34 @@ from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeGetSerializer,
                           UserSubscriptionSerializer,
                           AvatarSerializer,
-                          UserSubscribeSerializer, ShoppingCartSerializer)
+                          UserSubscribeSerializer,
+                          ShoppingCartSerializer,
+                          UserGetSerializer
+                          )
 from .utils import create_model_instance, delete_model_instance
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart)
 from users.models import User, Subscription
 
 
-class PublicUserViewSet(UserViewSet):
-    def get_queryset(self):
-        users = User.objects.all()
-        return users
+class UserInfoView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserGetSerializer
+    lookup_field = 'id'
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+
+
+class AvatarUserViewSet(UserViewSet):
+    """Работа с аватаркой пользователя"""
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return super().get_permissions()
+
+    def get_queryset(self):
+        users = User.objects.all()
+        return users
 
     @action(
         detail=False,
@@ -43,7 +56,7 @@ class PublicUserViewSet(UserViewSet):
     def set_avatar(self, request):
         if request.method == "PUT":
             if 'avatar' not in request.data:
-                return Response({"error": "No avatar provided."},
+                return Response({"error": "Аватар не предоставлен"},
                                 status=status.HTTP_400_BAD_REQUEST)
             serializer = AvatarSerializer(
                 self.request.user,
@@ -77,14 +90,16 @@ class UserSubscribeView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED)
 
     def delete(self, request, user_id):
-        author = get_object_or_404(User, id=user_id)
+        author = get_object_or_404(User,
+                                   id=user_id)
         if not Subscription.objects.filter(user=request.user,
                                            author=author).exists():
             return Response(
-                {'errors': 'Вы не подписаны на этого пользователя'},
+                {'errors': 'Вы не подписаны на данного пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         Subscription.objects.get(user=request.user.id, author=user_id).delete()
@@ -101,15 +116,14 @@ class UserSubscriptionsViewSet(mixins.ListModelMixin,
         return User.objects.filter(following__user=self.request.user)
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """Получение информации об ингредиентах."""
+class UserRecipesView(ListAPIView):
+    serializer_class = RecipeGetSerializer
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
 
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
-    filter_backends = (DjangoFilterBackend, )
-    filterset_class = IngredientFilter
-    pagination_class = None
+    def get_queryset(self):
+        user_id = self.kwargs['id']
+        return (Recipe.objects.filter(author__id=user_id)
+                .select_related('author'))
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -143,7 +157,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return create_model_instance(request, recipe, FavoriteSerializer)
 
         if request.method == 'DELETE':
-            error_message = 'У вас нет этого рецепта в избранном'
+            error_message = 'Данного рецепта в избранном не существует'
             return delete_model_instance(request,
                                          Favorite, recipe, error_message)
 
@@ -162,7 +176,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                          recipe, ShoppingCartSerializer)
 
         if request.method == 'DELETE':
-            error_message = 'У вас нет этого рецепта в списке покупок'
+            error_message = 'Данного рецепта в списке покупок не существует'
             return delete_model_instance(request,
                                          ShoppingCart, recipe, error_message)
 
@@ -189,3 +203,39 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = \
             'attachment; filename="shopping_cart.txt"'
         return response
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='filter'
+    )
+    def filter_recipes(self, request):
+        author_id = request.query_params.get('author')
+        ingredient_ids = request.query_params.get('ingredients')
+
+        queryset = self.queryset
+
+        if author_id:
+            queryset = queryset.filter(author__id=author_id)
+
+        if ingredient_ids:
+            ingredient_ids = [
+                int(id_.strip()) for id_ in ingredient_ids.split(',')
+            ]
+            queryset = queryset.filter(
+                recipeingredients__ingredient__id__in=ingredient_ids
+            ).distinct()
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Получение информации об ингредиентах."""
+
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = (AllowAny,)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = IngredientFilter
+    pagination_class = None

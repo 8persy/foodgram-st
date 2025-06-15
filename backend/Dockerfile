@@ -14,4 +14,6 @@ RUN pip3 install --upgrade pip && \
 
 COPY foodgram/ .
 
+RUN python3 manage.py collectstatic --noinput
+
 CMD ["gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]

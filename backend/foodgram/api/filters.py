@@ -4,9 +4,7 @@ from recipes.models import Recipe, Ingredient
 
 
 class RecipeFilter(FilterSet):
-    is_favorited = filters.BooleanFilter(
-        method='get_is_favorited'
-    )
+    is_favorited = filters.BooleanFilter(method='get_is_favorited')
     is_in_shopping_cart = filters.BooleanFilter(
         method='get_is_in_shopping_cart'
     )
