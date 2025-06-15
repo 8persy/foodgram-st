@@ -260,7 +260,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=ShoppingCart.objects.all(),
                 fields=('user', 'recipe'),
-                message='Рецепт уже добавлен в список покупок'
+                message='Рецепт уже находится в списке покупок'
             )
         ]
 
