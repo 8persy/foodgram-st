@@ -28,6 +28,13 @@ from recipes.models import (Favorite, Ingredient, Recipe,
 from users.models import User, Subscription
 
 
+class UserInfoView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserGetSerializer
+    lookup_field = 'id'
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+
+
 class PublicUserViewSet(UserViewSet):
     def get_queryset(self):
         users = User.objects.all()
@@ -105,15 +112,14 @@ class UserSubscriptionsViewSet(mixins.ListModelMixin,
         return User.objects.filter(following__user=self.request.user)
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """Получение информации об ингредиентах."""
+class UserRecipesView(ListAPIView):
+    serializer_class = RecipeGetSerializer
+    permission_classes = (IsAdminOrAuthorOrReadOnly,)
 
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
-    filter_backends = (DjangoFilterBackend, )
-    filterset_class = IngredientFilter
-    pagination_class = None
+    def get_queryset(self):
+        user_id = self.kwargs['id']
+        return (Recipe.objects.filter(author__id=user_id)
+                .select_related('author'))
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -220,18 +226,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class UserInfoView(RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserGetSerializer
-    lookup_field = 'id'
-    permission_classes = (IsAdminOrAuthorOrReadOnly,)
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """Получение информации об ингредиентах."""
 
-
-class UserRecipesView(ListAPIView):
-    serializer_class = RecipeGetSerializer
-    permission_classes = (IsAdminOrAuthorOrReadOnly,)
-
-    def get_queryset(self):
-        user_id = self.kwargs['id']
-        return (Recipe.objects.filter(author__id=user_id)
-                .select_related('author'))
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = (AllowAny,)
+    filter_backends = (DjangoFilterBackend, )
+    filterset_class = IngredientFilter
+    pagination_class = None
