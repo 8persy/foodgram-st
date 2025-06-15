@@ -21,12 +21,12 @@
         <form method="post">
             {% csrf_token %}
             <div class="mb-3">
-                <label for="password1" class="form-label">Новый пароль</label>
-                <input type="password" name="new_password1" id="password1" class="form-control border-secondary" required>
+                <label for="password_first" class="form-label">Новый пароль</label>
+                <input type="password" name="new_password_first" id="password_first" class="form-control border-secondary" required>
             </div>
             <div class="mb-3">
-                <label for="password2" class="form-label">Повторите пароль</label>
-                <input type="password" name="new_password2" id="password2" class="form-control border-secondary" required>
+                <label for="password_second" class="form-label">Повторите пароль</label>
+                <input type="password" name="new_password_second" id="password_second" class="form-control border-secondary" required>
             </div>
             <button type="submit" class="btn w-100 button">Сменить пароль</button>
         </form>

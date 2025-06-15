@@ -17,18 +17,20 @@ from django.urls import reverse
 
 
 def reset_password_request(request):
+    """Работа с запросом на обновление пароля"""
+
     if request.method == 'POST':
         email = request.POST.get('email')
         user = User.objects.filter(email=email).first()
         if user:
-            uid = urlsafe_base64_encode(force_bytes(user.id))
+            user_id = urlsafe_base64_encode(force_bytes(user.id))
             token = default_token_generator.make_token(user)
             reset_url = reverse(
                 "reset_password_confirm",
-                kwargs={"uidb64": uid, "token": token}
+                kwargs={"uidb64": user_id, "token": token}
             )
             reset_link = request.build_absolute_uri(reset_url)
-            message = render_to_string(
+            email_context = render_to_string(
                 "password/reset_email.html",
                 {
                     "user": user,
@@ -37,8 +39,8 @@ def reset_password_request(request):
             )
             send_mail(
                 "Сброс пароля",
-                message,
-                settings.DEFAULT_FROM_EMAIL,
+                email_context,
+                settings.EMAIL_HOST_USER,
                 [email],
                 fail_silently=False,
             )
@@ -47,15 +49,17 @@ def reset_password_request(request):
 
 
 def reset_password_confirm(request, uidb64, token):
+    """Обновление пароля"""
+
     try:
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(id=int(uid))
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(id=int(user_id))
     except Exception:
         user = None
 
     if user and default_token_generator.check_token(user, token):
         if request.method == 'POST':
-            new_password = request.POST.get('new_password2')
+            new_password = request.POST.get('new_password_second')
             if new_password:
                 user.set_password(new_password)
                 user.save()
