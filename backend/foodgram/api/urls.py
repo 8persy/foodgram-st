@@ -8,12 +8,15 @@ from .views import (IngredientViewSet, RecipeViewSet,
                     UserInfoView,
                     UserRecipesView)
 
+from django.views.generic import TemplateView
+from .utils import reset_password_confirm, reset_password_request
+
 router = DefaultRouter()
 
 router.register('ingredients',
                 IngredientViewSet, basename='ingredients')
 router.register('recipes', RecipeViewSet, basename='recipes')
-router.register('users', AvatarUserViewSet, basename='user')
+router.register('avatars', AvatarUserViewSet, basename='avatars')
 
 urlpatterns = [
     path('users/subscriptions/',
@@ -25,4 +28,18 @@ urlpatterns = [
     path('users/<int:id>/info/', UserInfoView.as_view(), name='user-info'),
     path('users/<int:id>/recipes/',
          UserRecipesView.as_view(), name='user-recipes'),
+]
+
+urlpatterns += [
+    path('accounts/', include('allauth.urls')),
+    path(
+        "reset_password/",
+        reset_password_request,
+        name="reset_password"
+    ),
+    path(
+        "reset_password_confirm/<uidb64>/<token>/",
+        reset_password_confirm,
+        name="reset_password_confirm"
+    ),
 ]
