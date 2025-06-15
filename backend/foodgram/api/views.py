@@ -35,15 +35,17 @@ class UserInfoView(RetrieveAPIView):
     permission_classes = (IsAdminOrAuthorOrReadOnly,)
 
 
-class PublicUserViewSet(UserViewSet):
-    def get_queryset(self):
-        users = User.objects.all()
-        return users
+class AvatarUserViewSet(UserViewSet):
+    """Работа с аватаркой пользователя"""
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return super().get_permissions()
+
+    def get_queryset(self):
+        users = User.objects.all()
+        return users
 
     @action(
         detail=False,
@@ -54,7 +56,7 @@ class PublicUserViewSet(UserViewSet):
     def set_avatar(self, request):
         if request.method == "PUT":
             if 'avatar' not in request.data:
-                return Response({"error": "No avatar provided."},
+                return Response({"error": "Аватар не предоставлен"},
                                 status=status.HTTP_400_BAD_REQUEST)
             serializer = AvatarSerializer(
                 self.request.user,
@@ -88,14 +90,16 @@ class UserSubscribeView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED)
 
     def delete(self, request, user_id):
-        author = get_object_or_404(User, id=user_id)
+        author = get_object_or_404(User,
+                                   id=user_id)
         if not Subscription.objects.filter(user=request.user,
                                            author=author).exists():
             return Response(
-                {'errors': 'Вы не подписаны на этого пользователя'},
+                {'errors': 'Вы не подписаны на данного пользователя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         Subscription.objects.get(user=request.user.id, author=user_id).delete()
@@ -153,7 +157,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return create_model_instance(request, recipe, FavoriteSerializer)
 
         if request.method == 'DELETE':
-            error_message = 'У вас нет этого рецепта в избранном'
+            error_message = 'Данного рецепта в избранном не существует'
             return delete_model_instance(request,
                                          Favorite, recipe, error_message)
 
@@ -172,7 +176,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                          recipe, ShoppingCartSerializer)
 
         if request.method == 'DELETE':
-            error_message = 'У вас нет этого рецепта в списке покупок'
+            error_message = 'Данного рецепта в списке покупок не существует'
             return delete_model_instance(request,
                                          ShoppingCart, recipe, error_message)
 
