@@ -29,12 +29,11 @@ def reset_password_request(request):
                 "reset_password_confirm",
                 kwargs={"uidb64": user_id, "token": token}
             )
-            reset_link = request.build_absolute_uri(reset_url)
+            link = request.build_absolute_uri(reset_url)
             email_context = render_to_string(
                 "password/reset_email.html",
                 {
-                    "user": user,
-                    "reset_link": reset_link,
+                    "link": link,
                 }
             )
             send_mail(
