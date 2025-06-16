@@ -1,4 +1,5 @@
 from django.urls import include, path
+from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
 
 from .views import (IngredientViewSet, RecipeViewSet,
@@ -40,5 +41,13 @@ urlpatterns += [
         "reset_password_confirm/<uidb64>/<token>/",
         reset_password_confirm,
         name="reset_password_confirm"
+    ),
+]
+
+urlpatterns += [
+    path(
+        "github_login/",
+        TemplateView.as_view(template_name="oauth/form.html"),
+        name="github_login_page"
     ),
 ]

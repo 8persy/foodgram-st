@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.sites.middleware.CurrentSiteMiddleware',
 ]
 
 ROOT_URLCONF = 'foodgram.urls'
@@ -158,13 +159,12 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'vitizer05@gmail.com'
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
-
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
-SITE_ID = 1
+SITE_ID = 4
 
 LOGIN_REDIRECT_URL = 'http://localhost/recipes'
 ACCOUNT_LOGOUT_REDIRECT_URL = 'http://localhost/'
@@ -179,7 +179,6 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     }
 }
-
 
 LOGGING = {
     'version': 1,
