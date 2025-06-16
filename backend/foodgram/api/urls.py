@@ -8,7 +8,6 @@ from .views import (IngredientViewSet, RecipeViewSet,
                     UserInfoView,
                     UserRecipesView)
 
-from django.views.generic import TemplateView
 from .utils import reset_password_confirm, reset_password_request
 
 router = DefaultRouter()
