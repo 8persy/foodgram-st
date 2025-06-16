@@ -12,3 +12,11 @@ djoser
 pillow
 dj-rest-auth==2.1.7
 django-allauth==0.51.0
+django-admin-interface==0.30.0
+django-colorfield==0.14.0
+django-grappelli==4.0.2
+django-jet==1.0.8
+channels==4.2.2
+daphne
+pytest-django
+pytest
