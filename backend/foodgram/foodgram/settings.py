@@ -67,6 +67,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
+ASGI_APPLICATION = "foodgram.asgi.application"
 
 DATABASES = {
     'default': {
@@ -191,5 +192,11 @@ LOGGING = {
     'root': {
         'handlers': ['console'],
         'level': 'DEBUG',
+    },
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }

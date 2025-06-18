@@ -11,6 +11,8 @@ from .views import (IngredientViewSet, RecipeViewSet,
 
 from .utils import reset_password_confirm, reset_password_request
 
+from web_socket.views import websocket_render
+
 router = DefaultRouter()
 
 router.register('ingredients',
@@ -50,4 +52,8 @@ urlpatterns += [
         TemplateView.as_view(template_name="oauth/form.html"),
         name="github_login_page"
     ),
+]
+
+urlpatterns += [
+    path('web_socket/', websocket_render),
 ]
